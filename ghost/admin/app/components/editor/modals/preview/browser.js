@@ -7,9 +7,9 @@ export default class ModalPostPreviewBrowserComponent extends Component {
         const iframe = event.target;
 
         // Set up message event listener on the parent window
-        window.addEventListener('message', (e) => {
-            // Verify the message is from our iframe
-            if (e.source === iframe.contentWindow && e.data.type === 'escape-keydown') {
+        const messageHandler = (e) => {
+            // Check if the message is from our iframe and has the expected format
+            if (e.source === iframe.contentWindow && e.data && e.data.type === 'escape-keydown') {
                 // Create and dispatch a new ESC key event to the parent window
                 const escEvent = new KeyboardEvent('keydown', {
                     key: 'Escape',
@@ -24,30 +24,35 @@ export default class ModalPostPreviewBrowserComponent extends Component {
                 // Dispatch the event on the document instead of window
                 document.dispatchEvent(escEvent);
             }
-        });
+        };
+        
+        window.addEventListener('message', messageHandler);
 
-        // Inject a script into the iframe to send messages back
+        // Inject a script into the iframe to send messages back when it loads
         iframe.addEventListener('load', () => {
+            // Try to access the iframe content - this will throw an error if cross-origin
             try {
-                // Try to inject script that will send postMessage on Escape
-                const script = `
-                    window.addEventListener('keydown', (e) => {
+                // Make sure we have a contentWindow before proceeding
+                if (!iframe.contentWindow) {
+                    return;
+                }
+                
+                // Attempt to inject script directly into same-origin iframe
+                const script = document.createElement('script');
+                script.textContent = `
+                    window.addEventListener('keydown', function(e) {
                         if (e.key === 'Escape') {
                             e.preventDefault();
                             e.stopPropagation();
-                            window.parent.postMessage({ type: 'escape-keydown' }, '*');
+                            window.parent.postMessage({type: 'escape-keydown'}, '*');
                         }
                     });
                 `;
                 
-                // This will only work if same-origin, but we try anyway
-                // and fall back to the message approach if it fails
-                const scriptElem = iframe.contentDocument.createElement('script');
-                scriptElem.textContent = script;
-                iframe.contentDocument.body.appendChild(scriptElem);
+                iframe.contentDocument.body.appendChild(script);
             } catch (error) {
-                // If we can't inject directly due to CORS, we rely solely on the iframe 
-                // content to send messages if it has our handler code
+                // For cross-origin iframes, we can't inject directly
+                // Ghost will need to include the message-sending code in the rendered preview page
             }
         });
     }
