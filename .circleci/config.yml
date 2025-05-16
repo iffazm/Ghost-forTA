@@ -17,7 +17,7 @@ jobs:
             yarn install
             yarn global add vite
       - persist_to_workspace:
-          root: ~/repo
+          root: ~/project  # ✅ Diperbaiki dari ~/repo
           paths:
             - node_modules
             - yarn.lock
