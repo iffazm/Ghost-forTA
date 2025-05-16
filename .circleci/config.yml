@@ -15,9 +15,8 @@ jobs:
           name: Install dependencies using Yarn
           command: |
             yarn install
-            yarn global add vite
       - persist_to_workspace:
-          root: ~/project  # ✅ Diperbaiki dari ~/repo
+          root: ~/project  # Diperbaiki dari ~/repo
           paths:
             - node_modules
             - yarn.lock
