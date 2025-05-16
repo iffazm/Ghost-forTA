@@ -13,12 +13,15 @@ jobs:
       - checkout
       - run:
           name: Install dependencies using Yarn
-          command: yarn install
+          command: |
+            yarn install
+            yarn global add vite
       - persist_to_workspace:
-          root: ~/project
+          root: ~/repo
           paths:
             - node_modules
             - yarn.lock
+            - .nx
 
   build:
     executor: node-executor
